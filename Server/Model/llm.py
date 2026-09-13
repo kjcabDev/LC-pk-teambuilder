@@ -4,23 +4,24 @@ from langchain_core.prompts import ChatPromptTemplate
 from Rag import pk_requester
 from flask import current_app as app
 
+AGENT = None
 def load_agent():
+    global AGENT
     MODEL = app.config.get('AGENT_MODEL')
     if 'ANTHROPIC_API_KEY' not in os.environ:
         print('Error: Unable to find Agent API key from system variables')
         return False
-
-    agent = ChatAnthropic( model = MODEL)
-    return agent
+    if AGENT is None:
+        AGENT = ChatAnthropic( model = MODEL)
 
 def health_check():
-    agent = load_agent()
-    if not agent:
-        return 'error', False, 'Unable to load agent - agent API key not set', ''
+    global AGENT
+    if not AGENT:
+        return 'error', False, 'Unable to load agent - agent is not loaded', ''
 
     response = False
     try:
-        response = agent.invoke('Say hi briefly')
+        response = AGENT.invoke('Say hi briefly')
         response = response.model_dump_json()
     except anthropic.APIStatusError as e:
         # the agent ran out of credits
@@ -32,7 +33,7 @@ def health_check():
 
 
 def evaluate_team(team):
-
+    global AGENT
     EVAL_INSTR = app.config.get('AGENT_EVAL_INSTRUCTIONS')
     RET_PROMPT = 'What is the current pokemon team composition?'
     TYPE_LIST = 'Normal, Fire, Water, Electric, Grass, Ice, Fighting, Poison, Ground, Flying, Psychic, Bug, Rock, Ghost, Dragon, Dark, Steel, and Fairy.'
@@ -40,10 +41,8 @@ def evaluate_team(team):
     doc_status, pk_team = pk_requester.build_ssot(team)
     prompt = ChatPromptTemplate.from_template(EVAL_INSTR)
     team_comp = pk_team['retriever'].invoke(RET_PROMPT)
-
-    agent = load_agent()
     if doc_status:
-        pk_chain = prompt | agent
+        pk_chain = prompt | AGENT
         eval_result = pk_chain.invoke({
             'team_comp': team_comp,
             'type_list': TYPE_LIST,

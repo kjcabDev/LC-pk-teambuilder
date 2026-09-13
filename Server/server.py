@@ -1,5 +1,6 @@
 from flask import Flask, jsonify, request, abort
 from flask_cors import CORS
+from Model import llm
 import config
 
 app = Flask(__name__, static_folder=None)
@@ -12,6 +13,7 @@ app.config['AGENT_MODEL'] = config.AGENT_MODEL
 app.config['AGENT_EVAL_INSTRUCTIONS'] = config.AGENT_EVAL_INSTRUCTIONS
 
 with app.app_context():
+    llm.load_agent()
     from API import health, evaluate
 
 # --------------------------------------------------#
