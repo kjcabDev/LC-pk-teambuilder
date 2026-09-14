@@ -8,9 +8,12 @@ CORS(app, resources={r"/api/*": {'origins': config.CORS_ORIGINS}})
 # --------------------------------------------------#
 # Server Settings
 # --------------------------------------------------#
+app.config['AVAILABLE_TYPE_LIST'] = config.AVAILABLE_TYPE_LIST
 app.config['AGENT_MODEL'] = config.AGENT_MODEL
-app.config['AGENT_EVAL_INST'] = config.AGENT_EVAL_INST
+app.config['AGENT_ROLE_INST'] = config.AGENT_ROLE_INST
+app.config['AGENT_TEAM_EVAL_INST'] = config.AGENT_TEAM_EVAL_INST
 app.config['AGENT_LOOKUP_INST'] = config.AGENT_LOOKUP_INST
+app.config['AGENT_PERSONA_INST'] = config.AGENT_PERSONA_INST
 
 with app.app_context():
     from Model import llm

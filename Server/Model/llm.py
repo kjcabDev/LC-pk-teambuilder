@@ -16,7 +16,7 @@ def load_agent():
         print('Error: Unable to find Agent API key from system variables')
         return False
     if AGENT is None:
-        AGENT = ChatAnthropic( model = MODEL)
+        AGENT = ChatAnthropic(model = MODEL)
     doc_status, RAG = pk_requester.load_rag_ssot()
 
 def health_check():
@@ -37,9 +37,9 @@ def health_check():
 
 def evaluate_team(team):
     global AGENT, RAG
-    EVAL_INSTR = app.config.get('AGENT_EVAL_INST')
+    EVAL_INSTR = app.config.get('AGENT_TEAM_EVAL_INST')
     RET_PROMPT = 'What is the current pokemon team composition?'
-    TYPE_LIST = 'Normal, Fire, Water, Electric, Grass, Ice, Fighting, Poison, Ground, Flying, Psychic, Bug, Rock, Ghost, Dragon, Dark, Steel, and Fairy.'
+    TYPE_LIST = app.config.get('AVAILABLE_TYPE_LIST ')
 
     doc_status, RAG = pk_requester.build_ssot(team)
     prompt = ChatPromptTemplate.from_template(EVAL_INSTR)
@@ -61,6 +61,10 @@ def evaluate_team(team):
         return eval_team
 
     return False
+
+def persona_check(team):
+    global AGENT, RAG
+
 
 def graph_pk_lookup():
     global AGENT, MODEL, RAG
