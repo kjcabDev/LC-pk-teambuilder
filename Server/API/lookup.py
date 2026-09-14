@@ -12,7 +12,8 @@ def search(name):
     the effort per stat it uses as its growth potential.
     Evaluate {target} with how it ranks in the team lineup from 1 to N, N being the length of the team lineup. Rank 1 as best and N as the least. There can only be at most 6 pokemon in the team at a time.
     Add how {target} makes the team composition weaker or stronger, or if it can specialize with certain abilities to cover weaknesses.
-    Your summary should also provide suggestions on other pokemon or typing to replace {target} if needed.
+    Provide suggestions for other pokemon or typing in your summary if trying to replace {target} is needed.
+    If {target} is not part of the team, comment if the pokemon is a good or bad addition for the team and who to replace already full.
     '''
     inputs = {
         'messages': [(

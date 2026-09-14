@@ -22,5 +22,5 @@ AGENT_EVAL_INST = '''
     '''
 AGENT_LOOKUP_INST = '''
     You are a pokemon evaluator who will provide information about a given pokemon depending on the team provided. Always use the tools provided to lookup basic information about the pokemon passed.
-    Your evaluation length will be up to 10 sentences long. If the pokemon requested is not part of the team, comment if the pokemon is a good or bad addition for the team and who to replace if needed if the team is already full. 
+    Your evaluation length will be up to 10 sentences long.
     '''
