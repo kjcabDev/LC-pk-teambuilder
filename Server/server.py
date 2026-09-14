@@ -1,6 +1,5 @@
 from flask import Flask, jsonify, request, abort
 from flask_cors import CORS
-from Model import llm
 import config
 
 app = Flask(__name__, static_folder=None)
@@ -10,11 +9,13 @@ CORS(app, resources={r"/api/*": {'origins': config.CORS_ORIGINS}})
 # Server Settings
 # --------------------------------------------------#
 app.config['AGENT_MODEL'] = config.AGENT_MODEL
-app.config['AGENT_EVAL_INSTRUCTIONS'] = config.AGENT_EVAL_INSTRUCTIONS
+app.config['AGENT_EVAL_INST'] = config.AGENT_EVAL_INST
+app.config['AGENT_LOOKUP_INST'] = config.AGENT_LOOKUP_INST
 
 with app.app_context():
+    from Model import llm
     llm.load_agent()
-    from API import health, evaluate
+    from API import health, evaluate, lookup
 
 # --------------------------------------------------#
 # API Routes
@@ -43,6 +44,18 @@ def llm_evaluate():
     status = 200
     response = evaluate.check_team(team)
     return jsonify(response), status
+
+@app.post('/lookup')
+def llm_lookup():
+    body = request.get_json(silent=True)
+    if not body:
+        abort(404, description='No request body provided')
+    target = body.get('target')
+    if target is None:
+        abort(404, description='No target pokemon provided')
+
+    response = lookup.search(target)
+    return response, 200
 
 # --------------------------------------------------#
 # Error Handlers

@@ -1,13 +1,15 @@
 import os, json, anthropic
 from langchain_anthropic import ChatAnthropic
 from langchain_core.prompts import ChatPromptTemplate
-from Rag import pk_requester
+from langchain.agents import create_agent
 from flask import current_app as app
+from Rag import pk_requester
+from Model import utils
 
 AGENT = None
+MODEL = app.config.get('AGENT_MODEL')
 def load_agent():
-    global AGENT
-    MODEL = app.config.get('AGENT_MODEL')
+    global AGENT, MODEL
     if 'ANTHROPIC_API_KEY' not in os.environ:
         print('Error: Unable to find Agent API key from system variables')
         return False
@@ -30,11 +32,9 @@ def health_check():
 
     return 'success', True, 'Agent is active and ready.', response
 
-
-
 def evaluate_team(team):
     global AGENT
-    EVAL_INSTR = app.config.get('AGENT_EVAL_INSTRUCTIONS')
+    EVAL_INSTR = app.config.get('AGENT_EVAL_INST')
     RET_PROMPT = 'What is the current pokemon team composition?'
     TYPE_LIST = 'Normal, Fire, Water, Electric, Grass, Ice, Fighting, Poison, Ground, Flying, Psychic, Bug, Rock, Ghost, Dragon, Dark, Steel, and Fairy.'
 
@@ -58,3 +58,19 @@ def evaluate_team(team):
         return eval_team
 
     return False
+
+def graph_pk_lookup():
+    global AGENT, MODEL
+
+    graph = create_agent(
+        model = MODEL,
+        tools = [utils.get_stats],
+        system_prompt = app.config.get('AGENT_LOOKUP_INST')
+    )
+    # prompt = ChatPrompTemplate.from_messages([
+    #     ('system', 'You are a Pokemon searcher. Use tools to verify stats before answering'),
+    #     ('human', '{input}'),
+    #     MessagesPlaceholder(variable_name='agent_scratchpad')
+    # ])
+
+    return graph
