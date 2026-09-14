@@ -20,7 +20,7 @@ pk_embed = OEmbed(model = MODEL_EMBED)
 pk_db = '../pk_db'
 
 def run_search(name):
-    to_search = API_PK_NAME.replace('__name__', name)
+    to_search = API_PK_NAME.replace('__name__', name.lower().strip())
     FULL_URL = BASE_URL + to_search
     result = requests.get(FULL_URL)
     return result.content
@@ -38,7 +38,7 @@ def extract_data(content, ref):
 
 # Build the RAG's single source of truth
 def build_ssot(name_list):
-
+    global pk_embed
     # Reject if the list is empty
     if len(name_list) <= 0:
         return False, 'Error: Pokemon Team List is empty'
@@ -63,7 +63,6 @@ def build_ssot(name_list):
         team_comp.append(data)
         tc_doc.append(document)
 
-
     # 2. Build the vector_store
     vector_store = Chroma(
         collection_name = 'current_pokemon_team',
@@ -76,4 +75,18 @@ def build_ssot(name_list):
     return True, {
         'retriever': retriever,
         'comp': team_comp
+    }
+
+def load_rag_ssot():
+    global pk_embed
+    # todo - add failure condition for missing rag store
+    vector_store = Chroma(
+        collection_name = 'current_pokemon_team',
+        persist_directory = pk_db,
+        embedding_function = pk_embed
+    )
+    retriever = vector_store.as_retriever(search_kwargs = {'k': 5})
+    return True, {
+        'retriever': retriever,
+        'comp': None
     }

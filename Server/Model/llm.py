@@ -1,20 +1,23 @@
 import os, json, anthropic
 from langchain_anthropic import ChatAnthropic
 from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.tools import create_retriever_tool
 from langchain.agents import create_agent
 from flask import current_app as app
 from Rag import pk_requester
 from Model import utils
 
-AGENT = None
+AGENT, RAG = None, None
 MODEL = app.config.get('AGENT_MODEL')
+
 def load_agent():
-    global AGENT, MODEL
+    global AGENT, MODEL, RAG
     if 'ANTHROPIC_API_KEY' not in os.environ:
         print('Error: Unable to find Agent API key from system variables')
         return False
     if AGENT is None:
         AGENT = ChatAnthropic( model = MODEL)
+    doc_status, RAG = pk_requester.load_rag_ssot()
 
 def health_check():
     global AGENT
@@ -33,14 +36,14 @@ def health_check():
     return 'success', True, 'Agent is active and ready.', response
 
 def evaluate_team(team):
-    global AGENT
+    global AGENT, RAG
     EVAL_INSTR = app.config.get('AGENT_EVAL_INST')
     RET_PROMPT = 'What is the current pokemon team composition?'
     TYPE_LIST = 'Normal, Fire, Water, Electric, Grass, Ice, Fighting, Poison, Ground, Flying, Psychic, Bug, Rock, Ghost, Dragon, Dark, Steel, and Fairy.'
 
-    doc_status, pk_team = pk_requester.build_ssot(team)
+    doc_status, RAG = pk_requester.build_ssot(team)
     prompt = ChatPromptTemplate.from_template(EVAL_INSTR)
-    team_comp = pk_team['retriever'].invoke(RET_PROMPT)
+    team_comp = RAG['retriever'].invoke(RET_PROMPT)
     if doc_status:
         pk_chain = prompt | AGENT
         eval_result = pk_chain.invoke({
@@ -60,17 +63,17 @@ def evaluate_team(team):
     return False
 
 def graph_pk_lookup():
-    global AGENT, MODEL
+    global AGENT, MODEL, RAG
 
+    rag_tool = create_retriever_tool(
+        retriever = RAG['retriever'],
+        name = 'current_pokemon_team',
+        description = 'The current pokemon team the user provided for evaluation which only includes the names and the types of each entry'
+    )
     graph = create_agent(
         model = MODEL,
-        tools = [utils.get_stats],
+        tools = [utils.get_stats, rag_tool],
         system_prompt = app.config.get('AGENT_LOOKUP_INST')
     )
-    # prompt = ChatPrompTemplate.from_messages([
-    #     ('system', 'You are a Pokemon searcher. Use tools to verify stats before answering'),
-    #     ('human', '{input}'),
-    #     MessagesPlaceholder(variable_name='agent_scratchpad')
-    # ])
 
     return graph

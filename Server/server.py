@@ -45,7 +45,7 @@ def llm_evaluate():
     response = evaluate.check_team(team)
     return jsonify(response), status
 
-@app.post('/lookup')
+@app.post('/dex')
 def llm_lookup():
     body = request.get_json(silent=True)
     if not body:
