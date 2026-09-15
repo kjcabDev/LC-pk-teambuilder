@@ -27,13 +27,12 @@ with app.app_context():
 # --------------------------------------------------#
 @app.get('/')
 def llm_health_check():
-    llm_state = health.check()
-    response = {
-        'status': 'ok',
-        'llm_is_active': llm_state,
-        'llm_creds': 'full'
-    }
-    return jsonify(response)
+    response = health.check()
+    status = 200
+    if response['agent_status'] == 'error':
+        status = 500
+    response['status'] = status
+    return jsonify(response), status
 
 @app.post('/evaluate')
 def llm_evaluate():
@@ -48,12 +47,17 @@ def llm_evaluate():
 
     status = 200
     response = evaluate.check_team(team)
+    if not response['success']:
+        status = 500
+
     return jsonify(response), status
 
 @app.post('/persona')
 def llm_persona():
     status = 200
     response = persona.evaluate()
+    if not response['success']:
+        status = 500
     return jsonify(response), status
 
 @app.post('/dex')
@@ -65,8 +69,11 @@ def llm_lookup():
     if target is None:
         abort(404, description='No target pokemon provided')
 
-    response = lookup.search(target)
-    return response, 200
+    status = 200
+    success, response = lookup.search(target)
+    if not success:
+        status = 500
+    return response, status
 
 # --------------------------------------------------#
 # Error Handlers

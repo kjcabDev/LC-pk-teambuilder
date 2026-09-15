@@ -2,10 +2,19 @@ from langchain_core.load import dumps
 from flask import current_app as app
 from Model import llm
 
-graph = llm.graph_pk_lookup()
+AGENT_ERR, graph = llm.graph_pk_lookup()
+AGENT_ERR_MSG = ''
+
+if not AGENT_ERR:
+    AGENT_ERR_MSG = graph
+    print('PK Lookup Unavailable. ', AGENT_ERR_MSG)
+    graph = False
 
 def search(name):
-    global graph
+    global graph, AGENT_ERR, AGENT_ERR_MSG
+    if not AGENT_ERR:
+        return False, f'Search API error: {AGENT_ERR_MSG}'
+
     target = name.lower().strip()
     search_template = app.config.get('AGENT_LOOKUP_INST')
     formatted_prompt = search_template.format(target=target)
@@ -23,4 +32,4 @@ def search(name):
     answer = event['messages'][-1].content
     result = dumps(answer, ensure_ascii=False)
 
-    return result
+    return True, result

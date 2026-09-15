@@ -9,24 +9,28 @@ from Model import utils
 
 AGENT, RAG = None, None
 MODEL = app.config.get('AGENT_MODEL')
+AGENT_STATUS = False
+AGENT_ERR_MSG = 'Agent is active'
 
 def load_agent():
-    global AGENT, MODEL, RAG
+    global AGENT, AGENT_STATUS, AGENT_ERR, AGENT_ERR_MSG, MODEL, RAG
+    doc_status, RAG = pk_requester.load_rag_ssot()
     if 'ANTHROPIC_API_KEY' not in os.environ:
-        print('Error: Unable to find Agent API key from system variables')
+        AGENT_ERR_MSG = 'Unable to find Agent API key from system variables'
         return False
-    if AGENT is None:
+
+    elif AGENT is None:
         AGENT = ChatAnthropic(
             model = MODEL,
             max_retries = app.config.get('API_MAX_RETRIES'),
             timeout = app.config.get('API_TIMEOUT')
         )
-    doc_status, RAG = pk_requester.load_rag_ssot()
+        AGENT_STATUS = True
 
 def health_check():
-    global AGENT
-    if not AGENT:
-        return 'error', False, 'Unable to load agent - agent is not loaded', ''
+    global AGENT, AGENT_STATUS, AGENT_ERR_MSG
+    if not AGENT_STATUS:
+        return 'error', False, AGENT_ERR_MSG, ''
 
     response = False
     try:
@@ -35,12 +39,16 @@ def health_check():
     except anthropic.APIStatusError as e:
         # the agent ran out of credits
         if e.status_code in [402, 429]:
-            return 'error', False, 'Unable to load agent - API quota limit reached', ''
+            AGENT_ERR_MSG = f'Error: Agent Credit Limits reached.'
+            return 'error', False, AGENT_ERR_MSG, ''
 
-    return 'success', True, 'Agent is active and ready.', response
+    return 'success', AGENT_STATUS, 'Agent is active and ready.', response
 
 def evaluate_team(team):
-    global AGENT, RAG
+    global AGENT, AGENT_STATUS, AGENT_ERR_MSG, RAG
+    if not AGENT_STATUS:
+        return False, AGENT_ERR_MSG
+
     EVAL_INST = app.config.get('AGENT_TEAM_EVAL_INST')
     RET_PROMPT = 'What is the current pokemon team composition?'
     TYPE_LIST = app.config.get('AVAILABLE_TYPE_LIST ')
@@ -55,12 +63,15 @@ def evaluate_team(team):
             'type_list': TYPE_LIST,
         })
         result = eval_result.model_dump_json()
-        return result
+        return True, result
 
-    return False
+    return False, 'An unknown error occurred'
 
 def persona_check():
-    global AGENT, RAG
+    global AGENT, AGENT_STATUS, AGENT_ERR_MSG, RAG
+    if not AGENT_STATUS:
+        return False, AGENT_ERR_MSG
+
     RET_PROMPT = 'What is the current pokemon team composition?'
     PERSONA_INST = app.config.get('AGENT_PERSONA_INST')
 
@@ -70,11 +81,12 @@ def persona_check():
     persona_result = pk_chain.invoke({
         'team_comp': team_comp
     })
-    return persona_result.model_dump_json()
-
+    return True, persona_result.model_dump_json()
 
 def graph_pk_lookup():
-    global AGENT, RAG
+    global AGENT, AGENT_STATUS, AGENT_ERR_MSG, RAG
+    if not AGENT_STATUS:
+        return False, AGENT_ERR_MSG
 
     rag_tool = create_retriever_tool(
         retriever = RAG['retriever'],
@@ -87,4 +99,4 @@ def graph_pk_lookup():
         system_prompt = app.config.get('AGENT_LOOKUP_INST')
     )
 
-    return graph
+    return True, graph
