@@ -1,4 +1,4 @@
-import os, json, anthropic
+import os, anthropic
 from langchain_anthropic import ChatAnthropic
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.tools import create_retriever_tool

@@ -1,0 +1,10 @@
+flask
+flask-cors
+gunicorn>=23.0
+anthropic
+certifi
+langchain
+langchain_anthropic
+langchain_core
+langchain_ollama
+langchain_chroma
