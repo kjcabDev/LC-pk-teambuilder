@@ -5,10 +5,13 @@ HOST = os.environ.get('PK_SVR_PORT', '0.0.0.0')
 DEBUG = os.environ.get('PK_SVR_DEBUG', '1') == '0'
 CORS_ORIGINS = os.environ.get('CORS_ORIGINS', '*')
 
-# Current API settings
+# Current API data settings
 AVAILABLE_TYPE_LIST = 'Normal, Fire, Water, Electric, Grass, Ice, Fighting, Poison, Ground, Flying, Psychic, Bug, Rock, Ghost, Dragon, Dark, Steel, and Fairy.'
 
 # Agent Specific Variables
+API_MAX_RETRIES=6
+API_TIMEOUT=60
+
 AGENT_MODEL = 'claude-haiku-4-5-20251001'
 AGENT_ROLE_INST = '''
      You will act as a pokemon team evaluator and friendly personality evaluator, 
@@ -31,16 +34,17 @@ AGENT_TEAM_EVAL_INST = ''''
 AGENT_LOOKUP_INST = '''
      You are a pokemon evaluator who will provide information about {target}'s role in the team using the current_pokemon_team tool. 
      Always use the tools provided to lookup basic information about the pokemon passed.
-     Your response will be 10 sentences long. Mention the current team lineup in the summary first, then give a short summary of {target}.
+     Your response will be 10 sentences long and no need to format it for browser presentation. Mention the current team lineup in the summary first, then give a short summary of {target}.
      Include the base stats of {target} as well as the effort per stat as its growth potential.
-     Evaluate {target} with how it ranks in the team lineup from 1 to N, N being the length of the team. Rank 1 as best and N as the least.
+     Evaluate {target} with how it ranks in the team lineup from 1 to N, N being the length of the team. Top 1 or ace as the best and N as the least.
      Add how {target} makes the team composition weaker or stronger, or if it can specialize with certain abilities to cover weaknesses.
      Provide suggestions for other pokemon or typing in your summary if trying to replace {target} is needed.
     '''
 AGENT_PERSONA_INST = '''
      You will act as a friendly personality evaluator. Check the current pokemon in this team: {team_comp}, and describe my personality based on it.
-     Your answer will be 7 sentences long. Answer like I am asking a friend for advice or insight. Provide at least 2 best guesses of what my myers-briggs personality is. 
+     Your answer will be 7 sentences long. No need to put a title, prefacing header to your reply and just provide your answer directly.
+     No need to format your answer for browser text presentation either. Answer like I am asking a friend for advice or insight.
+     Provide at least 2 best guesses of what my myers-briggs personality is. 
      Provide 3 educated guesses on what hobbies and activities the user enjoys. Provide 3 suggestions on what type of people I might enjoy with.
-     Provide 3 kinds of career I might thrive in. End the response with a disclaimer that your observations are merely for fun and should 
-     not be taken as guaranteed advice.
+     Provide 3 kinds of career I might thrive in. End the response with a disclaimer that your observations are merely for fun and should not be taken as guaranteed advice.
     '''

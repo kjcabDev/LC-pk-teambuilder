@@ -9,6 +9,8 @@ CORS(app, resources={r"/api/*": {'origins': config.CORS_ORIGINS}})
 # Server Settings
 # --------------------------------------------------#
 app.config['AVAILABLE_TYPE_LIST'] = config.AVAILABLE_TYPE_LIST
+app.config['API_MAX_RETRIES'] = config.API_MAX_RETRIES
+app.config['API_TIMEOUT'] = config.API_TIMEOUT
 app.config['AGENT_MODEL'] = config.AGENT_MODEL
 app.config['AGENT_ROLE_INST'] = config.AGENT_ROLE_INST
 app.config['AGENT_TEAM_EVAL_INST'] = config.AGENT_TEAM_EVAL_INST
@@ -18,7 +20,7 @@ app.config['AGENT_PERSONA_INST'] = config.AGENT_PERSONA_INST
 with app.app_context():
     from Model import llm
     llm.load_agent()
-    from API import health, evaluate, lookup
+    from API import health, evaluate, lookup, persona
 
 # --------------------------------------------------#
 # API Routes
@@ -46,6 +48,12 @@ def llm_evaluate():
 
     status = 200
     response = evaluate.check_team(team)
+    return jsonify(response), status
+
+@app.post('/persona')
+def llm_persona():
+    status = 200
+    response = persona.evaluate()
     return jsonify(response), status
 
 @app.post('/dex')
