@@ -10,7 +10,7 @@ AVAILABLE_TYPE_LIST = 'Normal, Fire, Water, Electric, Grass, Ice, Fighting, Pois
 
 # Agent Specific Variables
 API_MAX_RETRIES=6
-API_TIMEOUT=60
+API_TIMEOUT=120
 
 AGENT_MODEL = 'claude-haiku-4-5-20251001'
 AGENT_ROLE_INST = '''
@@ -41,8 +41,10 @@ AGENT_LOOKUP_INST = '''
      Provide suggestions for other pokemon or typing in your summary if trying to replace {target} is needed.
     '''
 AGENT_PERSONA_INST = '''
-     You will act as a friendly personality evaluator. Check the current pokemon in this team: {team_comp}, and describe my personality based on it.
-     Your answer will be 7 sentences long. No need to put a title, prefacing header to your reply and just provide your answer directly.
+     You will act as a friendly personality evaluator. Check the current pokemon in this team: {team_comp}, and describe my personality based on it.  
+     If the team is empty though, respond that you need to have at least one pokemon in the team to do the insight then ignore the next set of instructions.
+     If the team is not empty, continue with these instructions: Your answer will be 7 sentences long. 
+     No need to put a title, prefacing header to your reply and just provide your answer directly.
      No need to format your answer for browser text presentation either. Answer like I am asking a friend for advice or insight.
      Provide at least 2 best guesses of what my myers-briggs personality is. 
      Provide 3 educated guesses on what hobbies and activities the user enjoys. Provide 3 suggestions on what type of people I might enjoy with.

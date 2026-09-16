@@ -17,7 +17,7 @@ MODEL_EMBED = 'mxbai-embed-large'
 
 # Setup the vector embedding constants
 pk_embed = OEmbed(model = MODEL_EMBED)
-pk_db = '../pk_db'
+pk_db = './pk_db'
 
 def run_search(name):
     to_search = API_PK_NAME.replace('__name__', name.lower().strip())

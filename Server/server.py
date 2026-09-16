@@ -38,12 +38,12 @@ def llm_health_check():
 def llm_evaluate():
     body = request.get_json(silent=True)
     if not body:
-        abort(404, description='No request body provided')
+        abort(400, description='No request body provided')
     team = body.get('team')
     if team is None:
-        abort(404, description='No team data provided')
+        abort(400, description='No team data provided')
     elif isinstance(team, list) and len(team) == 0:
-        abort(404, description='Team list is empty')
+        abort(400, description='Team list is empty')
 
     status = 200
     response = evaluate.check_team(team)
@@ -64,16 +64,16 @@ def llm_persona():
 def llm_lookup():
     body = request.get_json(silent=True)
     if not body:
-        abort(404, description='No request body provided')
+        abort(400, description='No request body provided')
     target = body.get('target')
     if target is None:
-        abort(404, description='No target pokemon provided')
+        abort(400, description='No target pokemon provided')
 
     status = 200
     success, response = lookup.search(target)
     if not success:
         status = 500
-    return response, status
+    return jsonify(response), status
 
 # --------------------------------------------------#
 # Error Handlers

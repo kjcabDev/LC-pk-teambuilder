@@ -221,4 +221,5 @@ __marimo__/
 .streamlit/secrets.toml
 
 # RAG & Langchain
-pk_db/
+pk_db/*
+./server/pk_db/*
