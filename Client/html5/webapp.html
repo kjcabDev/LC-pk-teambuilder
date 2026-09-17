@@ -161,6 +161,34 @@
     </div>
   </div>
 
+  <!-- About PKTB modal: triggered from the sidebar, independent of the evaluation lightbox -->
+  <div id="about-lightbox" class="lightbox">
+    <div class="lightbox-panel about-panel">
+      <div class="about-title">
+        <h2>About PKTB</h2>
+      </div>
+      <div class="about-description">
+        <p>
+          <strong>PKTB</strong> stands for <strong>Pokémon Team Builder</strong> — a for-fun
+          LangChain project built for <a href="https://bitknvs.com" target="_blank" rel="noopener noreferrer">bitknvs.com</a>
+          by Kevin Joseff Cabrera.
+        </p>
+        <p>
+          Search for any Pokémon and add up to six to your roster, then hit "Rate my team" to
+          send it off to an AI agent for evaluation. It'll break down which types your team is
+          strong and weak against, let you dig into how each individual Pokémon fits in, and even
+          take a guess at what your picks say about your personality as a trainer.
+        </p>
+        <p class="tech-stack">
+          <strong>Built with:</strong> vanilla HTML, CSS &amp; JavaScript on the frontend;
+          Flask, LangChain, Anthropic's Claude, and ChromaDB on the backend; PokéAPI for Pokémon
+          data; Chart.js and html2canvas for the visuals.
+        </p>
+      </div>
+      <button type="button" id="about-close-btn" class="about-close-btn">Close</button>
+    </div>
+  </div>
+
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <script type="module" src="js/app.js"></script>

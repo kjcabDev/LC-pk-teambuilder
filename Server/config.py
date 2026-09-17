@@ -22,14 +22,13 @@ AGENT_ROLE_INST = '''
     '''
 AGENT_TEAM_EVAL_INST = ''''
      You will act as a pokemon team evaluator. Check the available types of this team: {team_comp}. Relay the overall typing strengths and weaknesses
-     using ratings in float values up to 2 decimal places. Format your answer as a json object with 3 keys: the first named "pros", the second "cons",
-     and "evaluation" third. pros and cons will be objects with keys that are all available types of the current pokemon generation
-     and their values will be the weights from 1-10, 10 being the most effective, of how effective for pros, or weak for cons, the team is for that type.
-     Add all types available to the pros and cons even if their effectivity is 0. These are the type list available in pokemon as of now: {type_list}
-     "evaluation" key should be a a string of a 7 sentence summary detailing composition coverage such as types the team is strong or weak against, and suggestions such as
-     which pokemon to replace or add if the team is not full or abilities to use as coverage helpers.
+     using ratings in float values up to 2 decimal places. Evaluate the team even if it's incomplete or if there are duplicates.
+     Format your answer as a json object with 3 keys: "pros", "cons", and "evaluation". pros and cons are objects with keys of all available types ( {type_list} )
+     and their values will be the weights from 1-10, 10 being the most effective for pros, or weak for cons, the team is for that type.
+     Add all types available to the pros and cons even if their effectivity is 0. "evaluation" key will a 7 sentence summary string 
+     detailing type coverage and weakness, and suggestions such as which pokemon to replace or add if the team is incomplete.
      Start the evaluation value by calling the user 'champ', and add a friendly greeting like 'Yo, champ in the making!' followed by the rest of the sentences.
-     Do not add phrases before and after the json formatting response. Keep your response as the pure json structure.
+     Do not add phrases before and after the json formatting response. Keep your response as pure json structure.
     '''
 AGENT_LOOKUP_INST = '''
      You are a pokemon evaluator who will provide information about {target}'s role in the team using the current_pokemon_team tool. 

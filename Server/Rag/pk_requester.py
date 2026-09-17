@@ -40,10 +40,11 @@ def extract_data(content, ref):
 def build_ssot(name_list):
     global pk_embed
     # Reject if the list is empty
-    if len(name_list) <= 0:
+    doc_len = len(name_list)
+    if doc_len <= 0:
         return False, 'Error: Pokemon Team List is empty'
 
-    if len(name_list) > 6:
+    if doc_len > 6:
         name_list = name_list[:6]
 
     # 1. Request for the pokemon in the name list and build the list
@@ -69,8 +70,9 @@ def build_ssot(name_list):
         persist_directory = pk_db,
         embedding_function = pk_embed
     )
+    vector_store.delete(ids=[str(i) for i in range(6)])
     vector_store.add_documents(documents = tc_doc, ids=ids)
-    retriever = vector_store.as_retriever(search_kwargs = {'k': 5})
+    retriever = vector_store.as_retriever(search_kwargs = {'k': doc_len})
 
     return True, {
         'retriever': retriever,

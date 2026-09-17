@@ -6,6 +6,7 @@ import { initRandomSuggestions } from './randomSuggestions.js';
 import { initRoster } from './roster.js';
 import { initLightbox } from './lightbox.js';
 import { initSidebar } from './sidebar.js';
+import { initAboutModal } from './aboutModal.js';
 import { initSaveRating } from './screenshot.js';
 
 async function loadFragment(url, mountSelector) {
@@ -39,6 +40,13 @@ async function init() {
   initSidebar({
     hamburgerBtn: document.getElementById('hamburger-btn'),
     overlayEl: document.getElementById('sidebar-overlay'),
+  });
+
+  initAboutModal({
+    triggerLinkEl: document.getElementById('about-pktb-link'),
+    modalEl: document.getElementById('about-lightbox'),
+    closeBtn: document.getElementById('about-close-btn'),
+    sidebarOverlayEl: document.getElementById('sidebar-overlay'),
   });
 
   const lightbox = initLightbox({

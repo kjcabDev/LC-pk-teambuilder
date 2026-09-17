@@ -3,8 +3,8 @@
 
 export const CONFIG = {
   // --- Your LangChain server ---
-  // LANGCHAIN_SERVER_URL: 'https://api.hawkaiproject.com/pktb', // live domain — restore once CORS/auth is sorted
-  LANGCHAIN_SERVER_URL: 'http://10.0.0.108:8084',
+  LANGCHAIN_SERVER_URL: 'https://api.hawkaiproject.com/pktb',
+  // LANGCHAIN_SERVER_URL: 'http://10.0.0.108:8084', // local dev fallback
   ENDPOINTS: {
     // GET on the base URL itself is the health check.
     EVALUATE_TEAM: '/evaluate',   // POST { team: [lowercase names] } -> { pros, cons, evaluation, success }
