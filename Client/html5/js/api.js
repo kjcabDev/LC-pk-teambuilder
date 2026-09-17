@@ -31,15 +31,30 @@ function post(path, body) {
   });
 }
 
-// team: array of { id, name, sprite }
-export function evaluateTeam(team) {
-  return post(CONFIG.ENDPOINTS.EVALUATE_TEAM, { team });
+// GET on the base URL is the health check — returns
+// { agent_is_active, agent_response, agent_status, message, status }.
+export function checkHealth() {
+  return fetchWithTimeout(CONFIG.LANGCHAIN_SERVER_URL);
 }
 
-export function fetchPokemonMatchupDetail(team, pokemonId) {
-  return post(CONFIG.ENDPOINTS.POKEMON_DETAIL, { team, pokemonId });
+// teamNames: array of lowercase pokemon name strings (exactly what the
+// server expects) — the caller is responsible for lowercasing before this.
+// Response: { pros: {...}, cons: {...}, evaluation: "...", success: true }
+export function evaluateTeam(teamNames) {
+  return post(CONFIG.ENDPOINTS.EVALUATE_TEAM, { team: teamNames });
 }
 
-export function fetchTrainerPersonality(team) {
-  return post(CONFIG.ENDPOINTS.PERSONALITY, { team });
+// The server keeps no team context of its own for /dex — it just needs the
+// target's lowercase name. Response is a bare string, not an object; some
+// responses have been observed with stray wrapping quote characters, so we
+// strip those defensively rather than assume a clean value every time.
+export async function fetchPokemonMatchupDetail(pokemonName) {
+  const result = await post(CONFIG.ENDPOINTS.POKEMON_DETAIL, { target: pokemonName.toLowerCase() });
+  return typeof result === 'string' ? result.replace(/^"+|"+$/g, '') : result;
+}
+
+// No payload needed — the server bases this on the last team sent to
+// /evaluate. Response: { message: "...", success: true }
+export function fetchTrainerPersonality() {
+  return post(CONFIG.ENDPOINTS.PERSONALITY, {});
 }

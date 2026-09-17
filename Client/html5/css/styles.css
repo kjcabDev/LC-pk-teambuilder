@@ -185,7 +185,7 @@ button {
   background: var(--color-surface);
   border: none;
   border-bottom: 1px solid var(--color-border);
-  padding: 2px 14px;
+  padding: 10px 14px;
   font-size: 14px;
   font-family: var(--font-body);
   color: var(--color-ink);
@@ -224,14 +224,13 @@ button {
 .random-suggestions-section {
   background: var(--color-bg);
   margin: 0 calc(var(--container-padding) * -1) 28px;
-  padding: 16px var(--container-padding) 4px;
+  padding: 10px var(--container-padding);
 }
 
 .random-suggestions-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 10px;
 }
 
 .random-suggestions-label {
@@ -266,8 +265,24 @@ button {
   display: flex;
   gap: 8px;
   overflow-x: auto;
-  padding-bottom: 4px;
+  padding: 10px 0;
   -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: #ffffff var(--color-bg);
+}
+
+.random-suggestions-grid::-webkit-scrollbar {
+  height: 10px;
+}
+
+.random-suggestions-grid::-webkit-scrollbar-track {
+  background: var(--color-bg);
+}
+
+.random-suggestions-grid::-webkit-scrollbar-thumb {
+  background: #ffffff;
+  border-radius: 999px;
+  border: 2px solid var(--color-bg);
 }
 
 .suggestion-card {
@@ -446,10 +461,11 @@ button {
 }
 
 .lightbox-panel {
-  width: 100%;
-  max-width: 480px;
-  max-height: 85vh;
-  overflow-y: auto;
+  width: 90vw;
+  height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   background: var(--color-container);
   border-radius: var(--radius-lg);
   padding: 16px;
@@ -460,6 +476,7 @@ button {
   align-items: center;
   justify-content: space-between;
   margin-bottom: 16px;
+  flex-shrink: 0;
 }
 
 .lightbox-tabs {
@@ -529,38 +546,246 @@ button {
   display: block;
 }
 
-.lightbox-hint {
-  font-size: 13px;
-  color: var(--color-ink-muted);
-  margin: 0 0 14px;
+/* ---------- Matchups tab layout ---------- */
+/* Mobile: lineup + evaluation stack in one column and scroll together as a
+   single block. Desktop: lineup becomes a fixed 1/3-width left column that
+   doesn't scroll, and the evaluation pane (2/3) scrolls independently within
+   its own bounded height. */
+.lightbox-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow-y: auto;
 }
 
-.matchup-roster {
-  display: flex;
+@media (min-width: 640px) {
+  .lightbox-body {
+    flex-direction: row;
+    align-items: stretch;
+    overflow: visible;
+  }
+
+  .matchup-lineup {
+    flex: 0 0 33%;
+  }
+
+  .matchup-evaluation {
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    overflow-y: auto;
+  }
+}
+
+.matchup-lineup-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(2, 1fr);
   gap: 8px;
-  flex-wrap: wrap;
-  margin-bottom: 16px;
 }
 
-.matchup-roster button {
-  width: 48px;
-  height: 48px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--color-border);
-  background: var(--color-surface);
+.matchup-lineup-item {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 4px;
+  padding: 8px 4px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  min-height: 112px;
 }
 
-.matchup-roster button:disabled {
+.matchup-lineup-item img {
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+}
+
+@media (min-width: 640px) {
+  .matchup-lineup-grid {
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    height: 100%;
+  }
+
+  .matchup-lineup-item {
+    min-height: 0;
+  }
+
+  .matchup-lineup-item img {
+    width: 92px;
+    height: 92px;
+  }
+}
+
+.matchup-lineup-item .lineup-name {
+  width: 100%;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-ink);
+  text-transform: capitalize;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.matchup-lineup-item:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-.matchup-detail,
+/* --- Pros/Cons chart: subtab buttons sit to the left of the chart itself --- */
+.chart-section {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.chart-subtabs {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 0 0 112px;
+}
+
+.chart-subtab-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-ink-muted);
+  text-align: left;
+}
+
+.chart-subtab-btn.is-active {
+  border-color: var(--color-ink);
+  color: var(--color-ink);
+  font-weight: 600;
+}
+
+.subtab-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  font-size: 12px;
+  line-height: 1;
+  color: #ffffff;
+}
+
+.subtab-icon-plus {
+  background: #2f9e44;
+}
+
+.subtab-icon-minus {
+  background: var(--color-accent);
+}
+
+.chart-canvas-wrap {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+  height: 200px;
+}
+
+/* --- Evaluation: "Full team" tab plus one per clicked pokemon --- */
+.eval-subtabs {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  margin-bottom: 10px;
+  padding-bottom: 4px;
+}
+
+.eval-subtab-btn {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-ink-muted);
+  white-space: nowrap;
+}
+
+.eval-subtab-btn.is-active {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-accent-ink);
+}
+
+/* Mobile shows the pokemon's sprite as the tab header; desktop shows its
+   name instead — both are rendered, CSS just picks which one is visible. */
+.eval-subtab-icon {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+}
+
+.eval-subtab-label {
+  display: none;
+}
+
+@media (min-width: 640px) {
+  .eval-subtab-icon {
+    display: none;
+  }
+
+  .eval-subtab-label {
+    display: inline;
+  }
+}
+
+.eval-content {
+  font-size: 14px;
+}
+
+.personality-headline {
+  margin-bottom: 12px;
+}
+
+.personality-headline-text {
+  font-family: var(--font-heading);
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--color-ink);
+  margin: 0;
+}
+
+.lightbox-placeholder {
+  color: var(--color-ink-muted);
+  font-style: italic;
+}
+
 .personality-detail {
   font-size: 14px;
+}
+
+.agent-offline-message {
+  text-align: center;
+  font-size: 15px;
+  color: var(--color-ink-muted);
+  background: var(--color-surface);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 28px 16px;
 }
 
 .error-text {
@@ -572,12 +797,12 @@ button {
   position: fixed;
   top: 16px;
   left: 16px;
-  z-index: 110;
+  z-index: 90;
   width: 40px;
   height: 40px;
   border: none;
   border-radius: 50%;
-  background: var(--color-surface);
+  background: var(--color-bg);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -588,7 +813,7 @@ button {
 .hamburger-btn span {
   width: 18px;
   height: 2px;
-  background: var(--color-ink);
+  background: #ffffff;
   border-radius: 2px;
 }
 

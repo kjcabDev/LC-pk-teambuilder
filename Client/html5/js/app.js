@@ -1,6 +1,6 @@
 import { CONFIG } from './config.js';
 import { withButtonLoading } from './loader.js';
-import { evaluateTeam } from './api.js';
+import { checkHealth, evaluateTeam } from './api.js';
 import { initSearch } from './search.js';
 import { initRandomSuggestions } from './randomSuggestions.js';
 import { initRoster } from './roster.js';
@@ -17,6 +17,13 @@ async function loadFragment(url, mountSelector) {
   } catch (err) {
     console.error(`Failed to load fragment: ${url}`, err);
   }
+}
+
+function showAgentOfflineMessage() {
+  const rosterSection = document.querySelector('.roster-section');
+  if (!rosterSection) return;
+  rosterSection.innerHTML =
+    '<p class="agent-offline-message">Oh no, the gym leader is not around to check your team!</p>';
 }
 
 async function init() {
@@ -39,8 +46,12 @@ async function init() {
     tabButtons: Array.from(document.querySelectorAll('.tab-btn')),
     tabPanels: Array.from(document.querySelectorAll('.tab-panel')),
     closeBtn: document.getElementById('lightbox-close'),
-    matchupRosterEl: document.getElementById('matchup-roster'),
-    matchupDetailEl: document.getElementById('matchup-detail'),
+    chartCanvasEl: document.getElementById('matchup-chart'),
+    chartSubtabButtons: Array.from(document.querySelectorAll('.chart-subtab-btn')),
+    lineupGridEl: document.getElementById('matchup-roster'),
+    evalSubtabsEl: document.getElementById('eval-subtabs'),
+    evalContentEl: document.getElementById('eval-content'),
+    personalityHeadlineEl: document.getElementById('personality-headline'),
     personalityDetailEl: document.getElementById('personality-detail'),
   });
 
@@ -49,38 +60,65 @@ async function init() {
     document.querySelector('.lightbox-panel')
   );
 
-  const rateBtn = document.getElementById('rate-team-btn');
-  let randomSuggestions; // assigned below; referenced by roster's onChange
+  // Health check gates whether team-building/rating is usable at all — if
+  // the agent is down (e.g. out of credits), replace the roster section
+  // with a friendly note instead of letting people hit a dead endpoint.
+  let isAgentActive = false;
+  try {
+    const health = await checkHealth();
+    isAgentActive = Boolean(health?.agent_is_active);
+  } catch (err) {
+    console.error('Health check failed', err);
+    isAgentActive = false;
+  }
 
-  const roster = initRoster({
-    gridEl: document.getElementById('roster-grid'),
-    countEl: document.getElementById('roster-count'),
-    clearBtn: document.getElementById('clear-team-btn'),
-    rateBtn,
-    maxTeamSize: CONFIG.MAX_TEAM_SIZE,
-    onChange: (count, max) => randomSuggestions?.setFull(count >= max),
-    onRateTeam: async (team) => {
-      try {
-        const result = await withButtonLoading(rateBtn, evaluateTeam(team));
-        lightbox.open(team, result);
-      } catch (err) {
-        alert(`Couldn't rate your team — ${err.message}.`);
-      }
-    },
-  });
+  let addToRoster = () => {}; // no-op fallback when the agent is offline
+  let randomSuggestions; // assigned below; referenced by roster's onChange, which can fire immediately
+
+  if (isAgentActive) {
+    const rateBtn = document.getElementById('rate-team-btn');
+
+    const roster = initRoster({
+      gridEl: document.getElementById('roster-grid'),
+      countEl: document.getElementById('roster-count'),
+      clearBtn: document.getElementById('clear-team-btn'),
+      rateBtn,
+      maxTeamSize: CONFIG.MAX_TEAM_SIZE,
+      onChange: (count, max) => randomSuggestions?.setFull(count >= max),
+      onRateTeam: async (team) => {
+        try {
+          const teamNames = team.map((p) => p.name.toLowerCase());
+          const result = await withButtonLoading(rateBtn, evaluateTeam(teamNames));
+          lightbox.open(team, result);
+        } catch (err) {
+          alert(`Couldn't rate your team — ${err.message}.`);
+        }
+      },
+    });
+
+    addToRoster = roster.addPokemon;
+  } else {
+    showAgentOfflineMessage();
+  }
 
   initSearch({
     inputEl: document.getElementById('search-input'),
     clearBtn: document.getElementById('search-clear-btn'),
     suggestionsEl: document.getElementById('suggestions'),
-    onSelect: roster.addPokemon,
+    onSelect: (pokemon) => addToRoster(pokemon),
   });
 
   randomSuggestions = initRandomSuggestions({
     gridEl: document.getElementById('random-suggestions'),
     shuffleBtn: document.getElementById('shuffle-btn'),
-    onPick: roster.addPokemon,
+    onPick: (pokemon) => addToRoster(pokemon),
   });
+
+  // If the agent came back offline, there's no roster to add into — lock
+  // the suggestion cards too rather than leaving a dead-looking action.
+  if (!isAgentActive) {
+    randomSuggestions.setFull(true);
+  }
 }
 
 document.addEventListener('DOMContentLoaded', init);

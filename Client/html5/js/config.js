@@ -3,12 +3,13 @@
 
 export const CONFIG = {
   // --- Your LangChain server ---
-  LANGCHAIN_SERVER_URL: 'http://localhost:8000',
+  // LANGCHAIN_SERVER_URL: 'https://api.hawkaiproject.com/pktb', // live domain — restore once CORS/auth is sorted
+  LANGCHAIN_SERVER_URL: 'http://10.0.0.108:8084',
   ENDPOINTS: {
-    // Placeholder contract — adjust once the real server API is finalized.
-    EVALUATE_TEAM: '/evaluate-team',       // POST { team } -> team-wide matchup summary
-    POKEMON_DETAIL: '/pokemon-detail',     // POST { team, pokemonId } -> single-pokemon breakdown
-    PERSONALITY: '/trainer-personality',   // POST { team } -> trainer personality result
+    // GET on the base URL itself is the health check.
+    EVALUATE_TEAM: '/evaluate',   // POST { team: [lowercase names] } -> { pros, cons, evaluation, success }
+    POKEMON_DETAIL: '/dex',       // POST { target: lowercase name } -> plain string
+    PERSONALITY: '/persona',      // POST {} -> { message, success } (uses server's last evaluated team)
   },
 
   // How long we wait for any server response (LangChain or PokeAPI) before

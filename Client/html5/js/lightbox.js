@@ -1,27 +1,70 @@
-import { capitalize } from './utils.js';
+import { capitalize, fitTextToWidth } from './utils.js';
 import { withButtonLoading } from './loader.js';
 import { fetchPokemonMatchupDetail, fetchTrainerPersonality } from './api.js';
+import { renderTypeChart } from './charts.js';
+
+const MBTI_TYPES = [
+  'INTJ', 'INTP', 'ENTJ', 'ENTP',
+  'INFJ', 'INFP', 'ENFJ', 'ENFP',
+  'ISTJ', 'ISFJ', 'ESTJ', 'ESFJ',
+  'ISTP', 'ISFP', 'ESTP', 'ESFP',
+];
+
+// The persona endpoint returns prose, not a structured type field, so the
+// MBTI code(s) it mentions have to be pulled out of the text itself —
+// checking against the fixed list of 16 real codes rather than parsing
+// free-form language.
+function extractMbtiTypes(text) {
+  if (!text) return [];
+  const found = [];
+  MBTI_TYPES.forEach((code) => {
+    if (new RegExp(`\\b${code}\\b`, 'i').test(text) && !found.includes(code)) {
+      found.push(code);
+    }
+  });
+  return found;
+}
 
 export function initLightbox({
   lightboxEl,
   tabButtons,
   tabPanels,
   closeBtn,
-  matchupRosterEl,
-  matchupDetailEl,
+  chartCanvasEl,
+  chartSubtabButtons,
+  lineupGridEl,
+  evalSubtabsEl,
+  evalContentEl,
+  personalityHeadlineEl,
   personalityDetailEl,
 }) {
   let currentTeam = [];
+  let prosData = {};
+  let consData = {};
+  let activeChartTab = 'pros';
+  const evalTabs = new Map(); // key -> { text }
 
   function open(team, evaluationResult) {
     currentTeam = team;
+    prosData = evaluationResult?.pros ?? {};
+    consData = evaluationResult?.cons ?? {};
+    activeChartTab = 'pros';
+    chartSubtabButtons.forEach((b) => b.classList.toggle('is-active', b.dataset.chartTab === 'pros'));
+
+    personalityHeadlineEl.innerHTML = '';
     personalityDetailEl.innerHTML = '';
     delete personalityDetailEl.dataset.loaded;
 
-    renderMatchupRoster();
-    matchupDetailEl.innerHTML = renderTeamSummary(evaluationResult);
-    switchTab('matchups');
+    // Make the panel visible FIRST — Chart.js measures the canvas's
+    // container at creation time, and a display:none ancestor reads as
+    // 0x0. It won't redraw later just because the container becomes
+    // visible, so rendering the chart before this line drew nothing.
     lightboxEl.classList.add('is-open');
+
+    renderLineup();
+    renderChart();
+    resetEvalTabs(evaluationResult?.evaluation ?? '');
+    switchTab('matchups');
   }
 
   function close() {
@@ -47,49 +90,106 @@ export function initLightbox({
     }
   }
 
+  // --- Pros / Cons chart subtabs ---
+  chartSubtabButtons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      activeChartTab = btn.dataset.chartTab;
+      chartSubtabButtons.forEach((b) => b.classList.toggle('is-active', b === btn));
+      renderChart();
+    });
+  });
+
+  function renderChart() {
+    const dataObj = activeChartTab === 'cons' ? consData : prosData;
+    renderTypeChart(chartCanvasEl, dataObj, activeChartTab);
+  }
+
+  // --- Team lineup (left column on desktop, first block on mobile) ---
+  function renderLineup() {
+    lineupGridEl.innerHTML = '';
+    currentTeam.forEach((pokemon) => {
+      const item = document.createElement('button');
+      item.type = 'button';
+      item.className = 'matchup-lineup-item';
+      item.dataset.pokemonId = pokemon.id;
+      item.innerHTML = `
+        <img src="${pokemon.sprite}" alt="">
+        <span class="lineup-name">${capitalize(pokemon.name)}</span>
+      `;
+      item.addEventListener('click', () => handleLineupClick(pokemon, item));
+      lineupGridEl.appendChild(item);
+      fitTextToWidth(item.querySelector('.lineup-name'));
+    });
+  }
+
+  async function handleLineupClick(pokemon, btnEl) {
+    const key = `pokemon-${pokemon.id}`;
+    if (evalTabs.has(key)) {
+      switchEvalTab(key);
+      return;
+    }
+    try {
+      const detailText = await withButtonLoading(btnEl, fetchPokemonMatchupDetail(pokemon.name));
+      evalTabs.set(key, { text: detailText });
+      addEvalTabButton(key, pokemon);
+      switchEvalTab(key);
+    } catch (err) {
+      alert(`Couldn't load ${capitalize(pokemon.name)}'s matchup — ${err.message}.`);
+    }
+  }
+
+  // --- Evaluation subtabs: "Full team" plus one per clicked pokemon ---
+  function resetEvalTabs(teamEvaluationText) {
+    evalTabs.clear();
+    evalTabs.set('team', { text: teamEvaluationText || 'No evaluation returned.' });
+
+    Array.from(evalSubtabsEl.querySelectorAll('.eval-subtab-btn')).forEach((btn) => {
+      if (btn.dataset.evalTab !== 'team') btn.remove();
+    });
+
+    switchEvalTab('team');
+  }
+
+  function addEvalTabButton(key, pokemon) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'eval-subtab-btn';
+    btn.dataset.evalTab = key;
+    btn.innerHTML = `
+      <img class="eval-subtab-icon" src="${pokemon.sprite}" alt="${capitalize(pokemon.name)}">
+      <span class="eval-subtab-label">${capitalize(pokemon.name)}</span>
+    `;
+    btn.addEventListener('click', () => switchEvalTab(key));
+    evalSubtabsEl.appendChild(btn);
+  }
+
+  function switchEvalTab(key) {
+    Array.from(evalSubtabsEl.querySelectorAll('.eval-subtab-btn')).forEach((btn) => {
+      btn.classList.toggle('is-active', btn.dataset.evalTab === key);
+    });
+    const tab = evalTabs.get(key);
+    evalContentEl.innerHTML = `<p>${tab?.text ?? ''}</p>`;
+  }
+
+  // The "Full team" button is static markup (always present) — wire it once.
+  evalSubtabsEl.querySelector('[data-eval-tab="team"]')?.addEventListener('click', () => switchEvalTab('team'));
+
+  // --- Personality tab ---
   async function loadPersonality(button) {
     try {
-      const result = await withButtonLoading(button, fetchTrainerPersonality(currentTeam));
-      personalityDetailEl.innerHTML = renderPersonality(result);
+      const result = await withButtonLoading(button, fetchTrainerPersonality());
+      const message = result?.message ?? 'No personality result returned.';
+      const types = extractMbtiTypes(message);
+
+      personalityHeadlineEl.innerHTML = types.length
+        ? `<p class="personality-headline-text">You're an ${types.join(' / ')} trainer!</p>`
+        : '<p class="personality-headline-text">Your trainer personality is ready below.</p>';
+
+      personalityDetailEl.innerHTML = `<p>${message}</p>`;
       personalityDetailEl.dataset.loaded = 'true';
     } catch (err) {
       personalityDetailEl.innerHTML = `<p class="error-text">Couldn't load your trainer type — ${err.message}.</p>`;
     }
-  }
-
-  function renderMatchupRoster() {
-    matchupRosterEl.innerHTML = '';
-    currentTeam.forEach((pokemon) => {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.setAttribute('aria-label', capitalize(pokemon.name));
-      btn.innerHTML = `<img src="${pokemon.sprite}" alt="${capitalize(pokemon.name)}" width="32" height="32">`;
-      btn.addEventListener('click', () => loadPokemonDetail(pokemon, btn));
-      matchupRosterEl.appendChild(btn);
-    });
-  }
-
-  async function loadPokemonDetail(pokemon, btn) {
-    try {
-      const detail = await withButtonLoading(btn, fetchPokemonMatchupDetail(currentTeam, pokemon.id));
-      matchupDetailEl.innerHTML = renderPokemonDetail(pokemon, detail);
-    } catch (err) {
-      matchupDetailEl.innerHTML = `<p class="error-text">Couldn't load ${capitalize(pokemon.name)}'s matchup — ${err.message}.</p>`;
-    }
-  }
-
-  // Rendering below is intentionally generic since the server's response
-  // shape isn't finalized yet — swap these for real field names once it is.
-  function renderTeamSummary(result) {
-    return `<p>${result?.summary ?? 'Team evaluation loaded.'}</p>`;
-  }
-
-  function renderPokemonDetail(pokemon, detail) {
-    return `<p>${capitalize(pokemon.name)}: ${detail?.summary ?? 'No details returned.'}</p>`;
-  }
-
-  function renderPersonality(result) {
-    return `<p><strong>${result?.type ?? 'Trainer'}</strong></p><p>${result?.description ?? ''}</p>`;
   }
 
   return { open, close };
