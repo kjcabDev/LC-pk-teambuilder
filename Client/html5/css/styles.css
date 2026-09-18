@@ -77,9 +77,10 @@ button {
   text-align: center;
 }
 
-.app-header h1 {
-  font-size: 40px;
-  letter-spacing: 0.02em;
+.app-logo {
+  max-width: 220px;
+  width: 100%;
+  height: auto;
 }
 
 @media (min-width: 640px) {
@@ -259,6 +260,12 @@ button {
 
 .shuffle-btn:active {
   transform: rotate(180deg);
+}
+
+.shuffle-btn img {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
 }
 
 .random-suggestions-grid {
